@@ -21,6 +21,10 @@
   },
   "homepage": "https://github.com/sjeon87/get-3gpp-specs#readme",
   "devDependencies": {
+    "@types/node": "^18.8.0",
     "typescript": "^4.8.4"
+  },
+  "dependencies": {
+    "basic-ftp": "^5.0.2"
   }
 }
