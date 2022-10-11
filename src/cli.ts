@@ -46,9 +46,13 @@ async function cli(spec: string, rel: string, quarter: string) {
     .sort((a, b) => {
       return b.date.getTime() - a.date.getTime();
     });
-  console.table(fileInfoList);
   const latest = fileInfoList[0];
-  await client.downloadTo(latest.name, `${path}/${latest.name}`);
+  if (!latest) {
+    throw Error("The requested spec not found");
+  }
+  const dest = `${path}/${latest.name}`;
+  await client.downloadTo(latest.name, dest);
+  console.log(`The requested spec has been downloaded to ${dest}`);
   client.close();
 }
 
