@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 import { Client } from "basic-ftp";
 import { parse } from "path";
 import { argv } from "process";
