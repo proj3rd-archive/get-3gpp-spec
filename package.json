@@ -7,6 +7,9 @@
     "get-3gpp-specs": "dist/cli.js"
   },
   "scripts": {
+    "build": "tsc",
+    "clean": "shx rm -rf dist",
+    "rebuild": "npm run clean && npm run build",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -22,6 +25,7 @@
   "homepage": "https://github.com/sjeon87/get-3gpp-specs#readme",
   "devDependencies": {
     "@types/node": "^18.8.0",
+    "shx": "^0.3.4",
     "typescript": "^4.8.4"
   },
   "dependencies": {
