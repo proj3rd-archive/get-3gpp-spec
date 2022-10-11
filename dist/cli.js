@@ -55,8 +55,8 @@ function cli(spec, rel, quarter) {
         if (!latest) {
             throw Error("The requested spec not found");
         }
-        const dest = `${path}/${latest.name}`;
-        yield client.downloadTo(latest.name, dest);
+        const dest = (0, path_1.resolve)((0, process_1.cwd)(), latest.name);
+        yield client.downloadTo(dest, `${path}/${latest.name}`);
         console.log(`The requested spec has been downloaded to ${dest}`);
         client.close();
     });
