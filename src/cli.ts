@@ -1,6 +1,8 @@
+#!/usr/bin/env node
+
 import { Client } from "basic-ftp";
-import { parse } from "path";
-import { argv } from "process";
+import { parse, resolve } from "path";
+import { argv, cwd } from "process";
 
 if (require.main === module) {
   const [, , spec, rel, quarter] = argv;
@@ -50,8 +52,8 @@ async function cli(spec: string, rel: string, quarter: string) {
   if (!latest) {
     throw Error("The requested spec not found");
   }
-  const dest = `${path}/${latest.name}`;
-  await client.downloadTo(latest.name, dest);
+  const dest = resolve(cwd(), latest.name);
+  await client.downloadTo(dest, `${path}/${latest.name}`);
   console.log(`The requested spec has been downloaded to ${dest}`);
   client.close();
 }
