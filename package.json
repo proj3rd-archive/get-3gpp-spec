@@ -1,10 +1,10 @@
 {
-  "name": "get-3gpp-specs",
+  "name": "get-3gpp-spec",
   "version": "1.0.0",
   "description": "",
   "main": "dist/cli.js",
   "bin": {
-    "get-3gpp-specs": "dist/cli.js"
+    "get-3gpp-spec": "dist/cli.js"
   },
   "scripts": {
     "build": "tsc",
@@ -14,15 +14,15 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/sjeon87/get-3gpp-specs.git"
+    "url": "git+https://github.com/proj3rd/get-3gpp-spec.git"
   },
   "keywords": [],
-  "author": "Seokseong Jeon <seokseong@jeon.engineer> (https://github.com/sjeon87)",
+  "author": "Seokseong Jeon <sjeon87+proj3rd@gmail.com> (https://github.com/proj3rd)",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/sjeon87/get-3gpp-specs/issues"
+    "url": "https://github.com/proj3rd/get-3gpp-spec/issues"
   },
-  "homepage": "https://github.com/sjeon87/get-3gpp-specs#readme",
+  "homepage": "https://github.com/proj3rd/get-3gpp-spec#readme",
   "devDependencies": {
     "@types/node": "^18.8.0",
     "shx": "^0.3.4",
