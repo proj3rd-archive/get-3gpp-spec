@@ -11,51 +11,68 @@ if (require.main === module) {
 
 async function cli(spec: string, rel: string, quarter: string) {
   const HOST = "ftp.3gpp.org";
-  const client = new Client();
-  await client.access({
-    host: HOST,
-  });
-
   const series = getSeries(spec);
   const path = `/Specs/archive/${series}_series/${spec}`;
-  await client.cd(path);
-  const fileInfoList = (await client.list())
-    .filter((fileInfo) => {
-      // Check release verison
-      const { name } = parse(fileInfo.name);
-      const indexHyphen = name.lastIndexOf("-");
-      if (indexHyphen === -1) {
-        throw Error(
-          "Spec must be in a form of AB.CDE[-F]-xyz or AB.CDE[-F]-uvwxyz"
-        );
-      }
-      const version = name.substring(indexHyphen + 1);
-      const release = getRelease(version);
-      if (release !== Number(rel)) {
-        return false;
-      }
-      // Check date
-      const date = parseDate(fileInfo.rawModifiedAt).getTime();
-      const [yy, mm] = quarter.split("-").map(Number);
-      const dateQuarter = new Date(yy, mm - 1).getTime();
-      const dateQuarterPlus3Months = new Date(yy, mm + 2).getTime();
-      return date >= dateQuarter && date < dateQuarterPlus3Months;
+  const client = new Client();
+  client
+    .access({
+      host: HOST,
     })
-    .map((fileInfo) => ({
-      ...fileInfo,
-      date: parseDate(fileInfo.rawModifiedAt),
-    }))
-    .sort((a, b) => {
-      return b.date.getTime() - a.date.getTime();
+    .then(() => {
+      return client.cd(path);
+    })
+    .then(() => {
+      return client.list();
+    })
+    .then((fileInfoList) => {
+      return fileInfoList
+        .filter((fileInfo) => {
+          // Check release verison
+          const { name } = parse(fileInfo.name);
+          const indexHyphen = name.lastIndexOf("-");
+          if (indexHyphen === -1) {
+            throw Error(
+              "Spec must be in a form of AB.CDE[-F]-xyz or AB.CDE[-F]-uvwxyz"
+            );
+          }
+          const version = name.substring(indexHyphen + 1);
+          const release = getRelease(version);
+          if (release !== Number(rel)) {
+            return false;
+          }
+          // Check date
+          const date = parseDate(fileInfo.rawModifiedAt).getTime();
+          const [yy, mm] = quarter.split("-").map(Number);
+          const dateQuarter = new Date(yy, mm - 1).getTime();
+          const dateQuarterPlus3Months = new Date(yy, mm + 2).getTime();
+          return date >= dateQuarter && date < dateQuarterPlus3Months;
+        })
+        .map((fileInfo) => ({
+          ...fileInfo,
+          date: parseDate(fileInfo.rawModifiedAt),
+        }))
+        .sort((a, b) => {
+          return b.date.getTime() - a.date.getTime();
+        });
+    })
+    .then((fileInfoList) => {
+      const latest = fileInfoList[0];
+      if (!latest) {
+        throw Error("The requested spec not found");
+      }
+      const dest = resolve(cwd(), latest.name);
+      console.log(`Downloading the requested spec to ${dest}...`);
+      return client.downloadTo(dest, `${path}/${latest.name}`);
+    })
+    .then(() => {
+      console.log("Done");
+    })
+    .catch((reason) => {
+      console.error(reason);
+    })
+    .finally(() => {
+      client.close();
     });
-  const latest = fileInfoList[0];
-  if (!latest) {
-    throw Error("The requested spec not found");
-  }
-  const dest = resolve(cwd(), latest.name);
-  await client.downloadTo(dest, `${path}/${latest.name}`);
-  console.log(`The requested spec has been downloaded to ${dest}`);
-  client.close();
 }
 
 /**
