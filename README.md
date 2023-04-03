@@ -5,6 +5,15 @@ A command line tool to download a 3GPP spec
 ## Usage
 
 ```sh
+npx get-3gpp-spec <spec number> <release> <yyyy-mm>
+```
+
+- A wild card `*` can be used for `<release>` and/or `<yyyy-mm>`
+- If the wild card is used, it displays a list of corresponding specs instead of downloading the specs
+
+### Example
+
+```sh
 npx get-3gpp-spec 38.331 17 2022-09
 ```
 

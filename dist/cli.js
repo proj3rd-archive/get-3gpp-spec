@@ -13,6 +13,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const basic_ftp_1 = require("basic-ftp");
 const path_1 = require("path");
 const process_1 = require("process");
+const WILD_CARD = "*";
 if (require.main === module) {
     const [, , spec, rel, quarter] = process_1.argv;
     cli(spec, rel, quarter);
@@ -44,10 +45,13 @@ function cli(spec, rel, quarter) {
                 }
                 const version = name.substring(indexHyphen + 1);
                 const release = getRelease(version);
-                if (release !== Number(rel)) {
+                if (rel !== WILD_CARD && release !== Number(rel)) {
                     return false;
                 }
                 // Check date
+                if (quarter === WILD_CARD) {
+                    return true;
+                }
                 const date = parseDate(fileInfo.rawModifiedAt).getTime();
                 const [yy, mm] = quarter.split("-").map(Number);
                 const dateQuarter = new Date(yy, mm - 1).getTime();
@@ -60,6 +64,10 @@ function cli(spec, rel, quarter) {
             });
         })
             .then((fileInfoList) => {
+            if (rel === WILD_CARD) {
+                console.log(JSON.stringify(fileInfoList, null, 2));
+                return;
+            }
             const latest = fileInfoList[0];
             if (!latest) {
                 throw Error("The requested spec not found");
