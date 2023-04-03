@@ -25,7 +25,7 @@ function cli(spec, rel, quarter) {
         let latest;
         (0, lib_1.getSpec)(spec, rel, quarter)
             .then((fileInfoList) => {
-            if (rel === WILD_CARD) {
+            if (rel === WILD_CARD || quarter === WILD_CARD) {
                 console.table(fileInfoList, ["path", "name", "date", "size"]);
                 return;
             }

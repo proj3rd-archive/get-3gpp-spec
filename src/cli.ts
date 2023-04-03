@@ -17,7 +17,7 @@ async function cli(spec: string, rel: string, quarter: string) {
   let latest: { path: string; name: string; date: Date };
   getSpec(spec, rel, quarter)
     .then((fileInfoList) => {
-      if (rel === WILD_CARD) {
+      if (rel === WILD_CARD || quarter === WILD_CARD) {
         console.table(fileInfoList, ["path", "name", "date", "size"]);
         return;
       }
