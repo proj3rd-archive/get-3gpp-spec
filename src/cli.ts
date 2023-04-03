@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 
 import { Client } from "basic-ftp";
-import { parse, resolve } from "path";
+import { resolve } from "path";
 import { argv, cwd } from "process";
+import { HOST, getSpec } from "./lib";
 
 const WILD_CARD = "*";
 
@@ -12,66 +13,29 @@ if (require.main === module) {
 }
 
 async function cli(spec: string, rel: string, quarter: string) {
-  const HOST = "ftp.3gpp.org";
-  const series = getSeries(spec);
-  const path = `/Specs/archive/${series}_series/${spec}`;
-  const client = new Client();
-  client
-    .access({
-      host: HOST,
-    })
-    .then(() => {
-      return client.cd(path);
-    })
-    .then(() => {
-      return client.list();
-    })
-    .then((fileInfoList) => {
-      return fileInfoList
-        .filter((fileInfo) => {
-          // Check release verison
-          const { name } = parse(fileInfo.name);
-          const indexHyphen = name.lastIndexOf("-");
-          if (indexHyphen === -1) {
-            throw Error(
-              "Spec must be in a form of AB.CDE[-F]-xyz or AB.CDE[-F]-uvwxyz"
-            );
-          }
-          const version = name.substring(indexHyphen + 1);
-          const release = getRelease(version);
-          if (rel !== WILD_CARD && release !== Number(rel)) {
-            return false;
-          }
-          // Check date
-          if (quarter === WILD_CARD) {
-            return true;
-          }
-          const date = parseDate(fileInfo.rawModifiedAt).getTime();
-          const [yy, mm] = quarter.split("-").map(Number);
-          const dateQuarter = new Date(yy, mm - 1).getTime();
-          const dateQuarterPlus3Months = new Date(yy, mm + 2).getTime();
-          return date >= dateQuarter && date < dateQuarterPlus3Months;
-        })
-        .map((fileInfo) => ({
-          ...fileInfo,
-          date: parseDate(fileInfo.rawModifiedAt),
-        }))
-        .sort((a, b) => {
-          return b.date.getTime() - a.date.getTime();
-        });
-    })
+  let client: Client;
+  let latest: { path: string; name: string; date: Date };
+  getSpec(spec, rel, quarter)
     .then((fileInfoList) => {
       if (rel === WILD_CARD) {
-        console.log(JSON.stringify(fileInfoList, null, 2));
+        console.table(fileInfoList, ["path", "name", "date", "size"]);
         return;
       }
-      const latest = fileInfoList[0];
+      latest = fileInfoList[0];
       if (!latest) {
         throw Error("The requested spec not found");
       }
-      const dest = resolve(cwd(), latest.name);
+      client = new Client();
+      return client.access({ host: HOST });
+    })
+    .then(() => {
+      if (!client) {
+        return;
+      }
+      const { path, name } = latest;
+      const dest = resolve(cwd(), name);
       console.log(`Downloading the requested spec to ${dest}...`);
-      return client.downloadTo(dest, `${path}/${latest.name}`);
+      return client.downloadTo(dest, `${path}/${name}`);
     })
     .then(() => {
       console.log("Done");
@@ -79,9 +43,7 @@ async function cli(spec: string, rel: string, quarter: string) {
     .catch((reason) => {
       console.error(reason);
     })
-    .finally(() => {
-      client.close();
-    });
+    .finally(() => client && client.close());
 }
 
 /**

@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
@@ -10,50 +9,60 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.getSpec = exports.HOST = void 0;
 const basic_ftp_1 = require("basic-ftp");
 const path_1 = require("path");
-const process_1 = require("process");
-const lib_1 = require("./lib");
+exports.HOST = "ftp.3gpp.org";
 const WILD_CARD = "*";
-if (require.main === module) {
-    const [, , spec, rel, quarter] = process_1.argv;
-    cli(spec, rel, quarter);
-}
-function cli(spec, rel, quarter) {
+function getSpec(spec, rel, quarter) {
     return __awaiter(this, void 0, void 0, function* () {
-        let client;
-        let latest;
-        (0, lib_1.getSpec)(spec, rel, quarter)
+        const series = getSeries(spec);
+        const path = `/Specs/archive/${series}_series/${spec}`;
+        const client = new basic_ftp_1.Client();
+        return client
+            .access({
+            host: exports.HOST,
+        })
+            .then(() => {
+            return client.cd(path);
+        })
+            .then(() => {
+            return client.list();
+        })
             .then((fileInfoList) => {
-            if (rel === WILD_CARD) {
-                console.table(fileInfoList, ["path", "name", "date", "size"]);
-                return;
-            }
-            latest = fileInfoList[0];
-            if (!latest) {
-                throw Error("The requested spec not found");
-            }
-            client = new basic_ftp_1.Client();
-            return client.access({ host: lib_1.HOST });
+            return fileInfoList
+                .filter((fileInfo) => {
+                // Check release verison
+                const { name } = (0, path_1.parse)(fileInfo.name);
+                const indexHyphen = name.lastIndexOf("-");
+                if (indexHyphen === -1) {
+                    throw Error("Spec must be in a form of AB.CDE[-F]-xyz or AB.CDE[-F]-uvwxyz");
+                }
+                const version = name.substring(indexHyphen + 1);
+                const release = getRelease(version);
+                if (rel !== WILD_CARD && release !== Number(rel)) {
+                    return false;
+                }
+                // Check date
+                if (quarter === WILD_CARD) {
+                    return true;
+                }
+                const date = parseDate(fileInfo.rawModifiedAt).getTime();
+                const [yy, mm] = quarter.split("-").map(Number);
+                const dateQuarter = new Date(yy, mm - 1).getTime();
+                const dateQuarterPlus3Months = new Date(yy, mm + 2).getTime();
+                return date >= dateQuarter && date < dateQuarterPlus3Months;
+            })
+                .map((fileInfo) => (Object.assign(Object.assign({ path }, fileInfo), { date: parseDate(fileInfo.rawModifiedAt) })))
+                .sort((a, b) => {
+                return b.date.getTime() - a.date.getTime();
+            });
         })
-            .then(() => {
-            if (!client) {
-                return;
-            }
-            const { path, name } = latest;
-            const dest = (0, path_1.resolve)((0, process_1.cwd)(), name);
-            console.log(`Downloading the requested spec to ${dest}...`);
-            return client.downloadTo(dest, `${path}/${name}`);
-        })
-            .then(() => {
-            console.log("Done");
-        })
-            .catch((reason) => {
-            console.error(reason);
-        })
-            .finally(() => client && client.close());
+            .catch((reason) => Promise.reject(reason))
+            .finally(() => client.close());
     });
 }
+exports.getSpec = getSpec;
 /**
  * Get a release from version strnig
  * @param version String in a form of xyz or uvwxyz
@@ -97,4 +106,4 @@ function parseDate(date) {
     const hour = ampm === "PM" ? hh + 12 : hh;
     return new Date(year, MM - 1, DD, hour, mm);
 }
-//# sourceMappingURL=cli.js.map
+//# sourceMappingURL=lib.js.map
