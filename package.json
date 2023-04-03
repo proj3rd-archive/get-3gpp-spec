@@ -1,6 +1,6 @@
 {
   "name": "get-3gpp-spec",
-  "version": "1.0.2",
+  "version": "1.1.0",
   "description": "",
   "main": "dist/cli.js",
   "bin": {
